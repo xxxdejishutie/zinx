@@ -1,11 +1,11 @@
 # zinx
-##一.使用流程
-###1.先创建server对象
+## 一.使用流程
+### 1.先创建server对象
     ser := znet.NewServer(YourServerName)
-###2.为业务设置处理方法
+### 2.为业务设置处理方法
     定义一个自己的处理方法类，继承znet.base，按照需要重写prehandle ,handle ,posthandle 管理函数，参数为ziface.irequest
 
-    ```go
+    ``` go
     type Myrouter struct {
 	znet.BaseRouter
     }
@@ -21,23 +21,23 @@
 	    }
     }
     ```
-###3.将自定义处理方法，与对应的任务id注册到server对象中
+### 3.将自定义处理方法，与对应的任务id注册到server对象中
     添加路由，多个不同处理方法需要保证业务号不同
 
-    ```go
+    ``` go
 	ser.AddRouter(0, &Myrouter{})
 	ser.AddRouter(1, &HelloRouter{})
     ```
 
-###4.启动server
+### 4.启动server
 
-    ```go
+    ``` go
     ser.start()
     ```
     
-###5.总体代码
+### 5.总体代码
 
-    ```go
+    ``` go
     import (
 	"fmt"
 	"my/zinx/ziface"
@@ -70,7 +70,7 @@
 	ser.Serve()
     }
     ```
-    
-##二.客户端通信格式
-###1.包的定义
+
+## 二.客户端通信格式
+### 1.包的定义
     HLV 格式，包的头部4个字节为包的大小，之后的四个字节为消息对应ID，之后为消息内容
