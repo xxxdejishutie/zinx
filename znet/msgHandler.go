@@ -10,7 +10,9 @@ type MsgHandle struct {
 }
 
 func NewMsgHandle() ziface.IMsgHandle {
-	return &MsgHandle{}
+	return &MsgHandle{
+		Apis: make(map[uint32]ziface.IRouter),
+	}
 }
 
 // 调用id对应的router方法
