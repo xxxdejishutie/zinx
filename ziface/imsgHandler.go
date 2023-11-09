@@ -6,4 +6,10 @@ type IMsgHandle interface {
 
 	//添加路由的方法
 	AddRouter(uint32, IRouter)
+
+	//创建WorkerPool
+	StartWorkerPool()
+
+	//添加任务到WorkerPool中
+	SendMsgToTaskQueue(IRequest)
 }

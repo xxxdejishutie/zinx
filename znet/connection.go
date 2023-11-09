@@ -28,6 +28,9 @@ type Connection struct {
 
 	//等待链接退出的channel
 	ExitChan chan bool
+
+	//用于读端和写端通信的管道
+	msgChan chan []byte
 }
 
 func NewConnection(conn *net.TCPConn, conid uint32, msghandle ziface.IMsgHandle) *Connection {
@@ -36,15 +39,17 @@ func NewConnection(conn *net.TCPConn, conid uint32, msghandle ziface.IMsgHandle)
 		ConnId:     conid,
 		IsClosed:   false,
 		Msghandler: msghandle,
+		msgChan:    make(chan []byte),
 		ExitChan:   make(chan bool, 1),
 	}
 	return c
 }
 
 func (c *Connection) StartReader() {
-	fmt.Println("Connid is ", c.ConnId)
+	fmt.Println("[Connection Reader Start]")
 
-	defer fmt.Println("Connid is ", c.ConnId, "Reader exit, Remote addr is ", c.Conn.RemoteAddr().String())
+	//fmt.Println("Connid is ", c.ConnId)
+	defer fmt.Println("[Reader exit]Connid is ", c.ConnId, ", Remote addr is ", c.Conn.RemoteAddr().String())
 	defer c.Stop()
 	//创建datapack实例用于拆包
 
@@ -91,12 +96,33 @@ func (c *Connection) StartReader() {
 	}
 }
 
+// 写端
+func (c *Connection) StartWriter() {
+	fmt.Println("[Connection Writer Start]")
+	defer fmt.Println("[Connection Writer exit]")
+	for {
+		select {
+		case data := <-c.msgChan:
+			_, err := c.Conn.Write(data)
+			if err != nil {
+				fmt.Println("[Connection Writer]  write error ", err)
+				return
+			}
+		case <-c.ExitChan:
+			return
+		}
+	}
+}
+
 // 开始链接
 func (c *Connection) Start() {
 	fmt.Println("[Conn start] connection id is ", c.ConnId)
 
 	//TODO 不断读取数据
-	c.StartReader()
+	go c.StartReader()
+
+	//读端开始运行
+	go c.StartWriter()
 }
 
 // 结束链接
@@ -108,9 +134,12 @@ func (c *Connection) Stop() {
 		return
 	}
 
+	//连接关闭
 	c.Conn.Close()
+	c.ExitChan <- true
 
 	close(c.ExitChan)
+	close(c.msgChan)
 }
 
 // 返回链接的套接字
@@ -142,10 +171,7 @@ func (c *Connection) PackSend(msgid uint32, data []byte) error {
 		return err
 	}
 
-	_, err = c.Conn.Write(binaryMsg)
-	if err != nil {
-		fmt.Println("connection send mess error", err)
-		return err
-	}
+	//向管道写入数据，发送给写端
+	c.msgChan <- binaryMsg
 	return nil
 }
