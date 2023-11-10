@@ -28,11 +28,16 @@ type Server struct {
 func (s *Server) Start() {
 	//获取一个addr
 
-	fmt.Printf("[zinx]ServerName is %s , TcpHost is %s ,TcpPort is %d , Version is %s", utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort, utils.GlobalObject.Version)
-	fmt.Printf("[zinx]ServerMaxserver is %d,MaxPackageSize is %d", utils.GlobalObject.Maxconn, utils.GlobalObject.MaxPackageSize)
+	fmt.Printf("[zinx]ServerName is %s , TcpHost is %s ,TcpPort is %d , Version is %s\n", utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort, utils.GlobalObject.Version)
+	fmt.Printf("[zinx]ServerMaxserver is %d,MaxPackageSize is %d\n", utils.GlobalObject.Maxconn, utils.GlobalObject.MaxPackageSize)
+	fmt.Printf("[zinx]Workpoolsize is %d\n", utils.GlobalObject.WorkPoolSize)
 	fmt.Println("[start] server has start ,  listen at  ", s.IP, " : ", s.Port)
 
 	go func() {
+
+		//开启工作池
+		s.MsgHandler.StartWorkerPool()
+
 		addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
 			fmt.Println("net addr create errno")

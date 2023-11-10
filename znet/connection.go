@@ -3,6 +3,7 @@ package znet
 import (
 	"fmt"
 	"io"
+	"my/zinx/utils"
 	"my/zinx/ziface"
 	"net"
 )
@@ -90,8 +91,13 @@ func (c *Connection) StartReader() {
 			msg:  msg,
 		}
 
-		//调用设置好的router方法
-		go c.Msghandler.DoRouter(&req)
+		//工作池开启了就用工作池，否则直接处理
+		if utils.GlobalObject.WorkPoolSize > 0 {
+			c.Msghandler.SendMsgToTaskQueue(&req)
+		} else {
+			//调用设置好的router方法
+			go c.Msghandler.DoRouter(&req)
+		}
 
 	}
 }
