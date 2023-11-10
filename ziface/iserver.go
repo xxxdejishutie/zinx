@@ -12,4 +12,7 @@ type ISever interface {
 
 	//增加一个路由
 	AddRouter(uint32, IRouter)
+
+	//获取connmanger
+	GetConnMgr() IConnManager
 }

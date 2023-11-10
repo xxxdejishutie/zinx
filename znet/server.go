@@ -22,17 +22,25 @@ type Server struct {
 
 	//增加处理业务api
 	MsgHandler ziface.IMsgHandle
+
+	//连接管理器
+	ConnMgr ziface.IConnManager
 }
 
 // 开启服务器
 func (s *Server) Start() {
 	//获取一个addr
 
-	fmt.Printf("[zinx]ServerName is %s , TcpHost is %s ,TcpPort is %d , Version is %s", utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort, utils.GlobalObject.Version)
-	fmt.Printf("[zinx]ServerMaxserver is %d,MaxPackageSize is %d", utils.GlobalObject.Maxconn, utils.GlobalObject.MaxPackageSize)
+	fmt.Printf("[zinx]ServerName is %s , TcpHost is %s ,TcpPort is %d , Version is %s\n", utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort, utils.GlobalObject.Version)
+	fmt.Printf("[zinx]ServerMaxserver is %d,MaxPackageSize is %d\n", utils.GlobalObject.Maxconn, utils.GlobalObject.MaxPackageSize)
+	fmt.Printf("[zinx]Workpoolsize is %d\n", utils.GlobalObject.WorkPoolSize)
 	fmt.Println("[start] server has start ,  listen at  ", s.IP, " : ", s.Port)
 
 	go func() {
+
+		//开启工作池
+		s.MsgHandler.StartWorkerPool()
+
 		addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
 			fmt.Println("net addr create errno")
@@ -57,7 +65,16 @@ func (s *Server) Start() {
 			}
 			fmt.Println("connect succ")
 
-			dealconn := NewConnection(cnn, cid, s.MsgHandler)
+			//判断现在连接是不是超过了最大连接
+			if s.ConnMgr.Len() >= utils.GlobalObject.Maxconn {
+				//TODO 去给客户端回应一个错误
+				fmt.Println("Too Many Connection")
+				cnn.Close()
+				continue
+			}
+
+			//创建connection连接
+			dealconn := NewConnection(s, cnn, cid, s.MsgHandler)
 			dealconn.Start()
 			cid++
 		}
@@ -76,11 +93,18 @@ func (s *Server) Serve() {
 
 // 关闭服务器
 func (s *Server) Stop() {
+	//释放资源
 
+	fmt.Println("[STOP] Server ClearConn")
+	s.ConnMgr.ClearConn()
 }
 
 func (s *Server) AddRouter(msgid uint32, router ziface.IRouter) {
 	s.MsgHandler.AddRouter(msgid, router)
+}
+
+func (s *Server) GetConnMgr() ziface.IConnManager {
+	return s.ConnMgr
 }
 
 // 初始化server模块
@@ -92,6 +116,7 @@ func NewServer(name string) ziface.ISever {
 		Port:      utils.GlobalObject.TcpPort,
 		//Router:    nil,
 		MsgHandler: NewMsgHandle(),
+		ConnMgr:    NewConnManager(),
 	}
 	return s
 }

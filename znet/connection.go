@@ -3,11 +3,15 @@ package znet
 import (
 	"fmt"
 	"io"
+	"my/zinx/utils"
 	"my/zinx/ziface"
 	"net"
 )
 
 type Connection struct {
+	//关联的TCPServer
+	TCPserver ziface.ISever
+
 	//链接的套接字
 	Conn *net.TCPConn
 
@@ -33,8 +37,9 @@ type Connection struct {
 	msgChan chan []byte
 }
 
-func NewConnection(conn *net.TCPConn, conid uint32, msghandle ziface.IMsgHandle) *Connection {
+func NewConnection(tcpserver ziface.ISever, conn *net.TCPConn, conid uint32, msghandle ziface.IMsgHandle) *Connection {
 	c := &Connection{
+		TCPserver:  tcpserver,
 		Conn:       conn,
 		ConnId:     conid,
 		IsClosed:   false,
@@ -42,6 +47,10 @@ func NewConnection(conn *net.TCPConn, conid uint32, msghandle ziface.IMsgHandle)
 		msgChan:    make(chan []byte),
 		ExitChan:   make(chan bool, 1),
 	}
+
+	//将连接加入到连接管理
+	c.TCPserver.GetConnMgr().Add(c)
+
 	return c
 }
 
@@ -90,8 +99,13 @@ func (c *Connection) StartReader() {
 			msg:  msg,
 		}
 
-		//调用设置好的router方法
-		go c.Msghandler.DoRouter(&req)
+		//工作池开启了就用工作池，否则直接处理
+		if utils.GlobalObject.WorkPoolSize > 0 {
+			c.Msghandler.SendMsgToTaskQueue(&req)
+		} else {
+			//调用设置好的router方法
+			go c.Msghandler.DoRouter(&req)
+		}
 
 	}
 }
@@ -133,6 +147,9 @@ func (c *Connection) Stop() {
 	if c.IsClosed {
 		return
 	}
+
+	//在连接管理中删除连接
+	c.TCPserver.GetConnMgr().Remote(c)
 
 	//连接关闭
 	c.Conn.Close()
