@@ -15,4 +15,15 @@ type ISever interface {
 
 	//获取connmanger
 	GetConnMgr() IConnManager
+
+	// 设置OnConnStart的钩子函数，在连接结束的时候调用
+	SetOnConnStart(func(IConnection))
+
+	// 设置OnConnStop的钩子函数，在连接结束的时候调用
+	SetOnConnStop(func(IConnection))
+	// 调用OnConnStart函数
+	CallOnConnStart(conn IConnection)
+
+	// 调用OnConnStop函数
+	CallOnConnStop(IConnection)
 }

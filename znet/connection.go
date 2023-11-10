@@ -132,6 +132,9 @@ func (c *Connection) StartWriter() {
 func (c *Connection) Start() {
 	fmt.Println("[Conn start] connection id is ", c.ConnId)
 
+	//调用OnConnStart函数
+	c.TCPserver.CallOnConnStart(c)
+
 	//TODO 不断读取数据
 	go c.StartReader()
 
@@ -147,6 +150,8 @@ func (c *Connection) Stop() {
 	if c.IsClosed {
 		return
 	}
+
+	c.TCPserver.CallOnConnStop(c)
 
 	//在连接管理中删除连接
 	c.TCPserver.GetConnMgr().Remote(c)
