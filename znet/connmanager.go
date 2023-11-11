@@ -3,9 +3,9 @@ package znet
 import (
 	"errors"
 	"fmt"
-	"my/zinx/ziface"
-
 	"sync"
+
+	"zinx.mod/ziface"
 )
 
 // 连接管理模块

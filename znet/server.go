@@ -2,9 +2,10 @@ package znet
 
 import (
 	"fmt"
-	"my/zinx/utils"
-	"my/zinx/ziface"
 	"net"
+
+	"zinx.mod/utils"
+	"zinx.mod/ziface"
 )
 
 type Server struct {

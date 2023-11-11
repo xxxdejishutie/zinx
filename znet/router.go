@@ -1,6 +1,6 @@
 package znet
 
-import "my/zinx/ziface"
+import "zinx.mod/ziface"
 
 type BaseRouter struct{}
 
