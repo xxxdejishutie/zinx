@@ -19,6 +19,13 @@ type IConnection interface {
 
 	//发送数据
 	PackSend(uint32, []byte) error
+
+	//设置链接的属性
+	SetProperty(string, interface{})
+	//获取链接的属性
+	GetProperty(string) (interface{}, error)
+	//移除链接的属性
+	RemoteProperty(string)
 }
 
 type HandleFun func(*net.TCPConn, []byte, int) error

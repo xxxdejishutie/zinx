@@ -1,11 +1,13 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"my/zinx/utils"
 	"my/zinx/ziface"
 	"net"
+	"sync"
 )
 
 type Connection struct {
@@ -35,6 +37,11 @@ type Connection struct {
 
 	//用于读端和写端通信的管道
 	msgChan chan []byte
+
+	//链接配置
+	property map[string]interface{}
+	//保护链接配置的读写锁
+	propertyLock sync.RWMutex
 }
 
 func NewConnection(tcpserver ziface.ISever, conn *net.TCPConn, conid uint32, msghandle ziface.IMsgHandle) *Connection {
@@ -46,6 +53,7 @@ func NewConnection(tcpserver ziface.ISever, conn *net.TCPConn, conid uint32, msg
 		Msghandler: msghandle,
 		msgChan:    make(chan []byte),
 		ExitChan:   make(chan bool, 1),
+		property:   make(map[string]interface{}),
 	}
 
 	//将连接加入到连接管理
@@ -132,14 +140,14 @@ func (c *Connection) StartWriter() {
 func (c *Connection) Start() {
 	fmt.Println("[Conn start] connection id is ", c.ConnId)
 
-	//调用OnConnStart函数
-	c.TCPserver.CallOnConnStart(c)
-
 	//TODO 不断读取数据
 	go c.StartReader()
 
 	//读端开始运行
 	go c.StartWriter()
+
+	//调用OnConnStart函数
+	c.TCPserver.CallOnConnStart(c)
 }
 
 // 结束链接
@@ -196,4 +204,32 @@ func (c *Connection) PackSend(msgid uint32, data []byte) error {
 	//向管道写入数据，发送给写端
 	c.msgChan <- binaryMsg
 	return nil
+}
+
+// 设置链接的属性
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	c.property[key] = value
+}
+
+// 获取链接的属性
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+
+	if value, ok := c.property[key]; ok {
+		return value, nil
+	} else {
+		return nil, errors.New("GetProperty error")
+	}
+}
+
+// 移除链接的属性
+func (c *Connection) RemoteProperty(key string) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	delete(c.property, key)
 }
