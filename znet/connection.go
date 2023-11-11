@@ -4,19 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"my/zinx/utils"
-	"my/zinx/ziface"
 	"net"
 	"sync"
+
+	"zinx.mod/utils"
+	"zinx.mod/ziface"
 )
 
 type Connection struct {
 	//关联的TCPServer
 	TCPserver ziface.ISever
-
 	//链接的套接字
 	Conn *net.TCPConn
-
 	//链接的id
 	ConnId uint32
 

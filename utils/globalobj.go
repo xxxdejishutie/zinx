@@ -3,8 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"my/zinx/ziface"
 	"os"
+
+	"zinx.mod/ziface"
 )
 
 /*

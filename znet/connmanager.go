@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"my/zinx/ziface"
+
 	"sync"
 )
 
-//连接管理模块
-
+// 连接管理模块
 type ConnManager struct {
 	Connections map[uint32]ziface.IConnection //连接集合
 	ConnLock    sync.RWMutex                  //保护连接集合的读写锁
